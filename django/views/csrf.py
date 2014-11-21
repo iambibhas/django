@@ -58,7 +58,7 @@ CSRF_FAILURE_TEMPLATE = """
 
   <p>In general, this can occur when there is a genuine Cross Site Request Forgery, or when
   <a
-  href='http://docs.djangoproject.com/en/dev/ref/contrib/csrf/#ref-contrib-csrf'>Django's
+  href='{{ csrf_doc_url }}#ref-contrib-csrf'>Django's
   CSRF mechanism</a> has not been used correctly.  For POST forms, you need to
   ensure:</p>
 
@@ -100,11 +100,23 @@ def csrf_failure(request, reason=""):
     Default view used when request fails CSRF protection
     """
     from django.middleware.csrf import REASON_NO_REFERER, REASON_NO_CSRF_COOKIE
+    from django.utils.version import get_major_version
+    from django import VERSION
+    csrf_doc_url = 'https://docs.djangoproject.com/en/{ver}/ref/{contrib}csrf/'
+
+    if 'alpha' in VERSION or 'beta' in VERSION:
+        csrf_doc_url = csrf_doc_url.format(ver='dev', contrib='')
+    else:
+        contrib = 'contrib/' if float(get_major_version()) < 1.8 else ''
+        csrf_doc_url = csrf_doc_url.format(ver=get_major_version(),
+            contrib=contrib)
+
     t = Template(CSRF_FAILURE_TEMPLATE)
     c = Context({
         'title': _("Forbidden"),
         'main': _("CSRF verification failed. Request aborted."),
         'reason': reason,
+        'csrf_doc_url': csrf_doc_url,
         'no_referer': reason == REASON_NO_REFERER,
         'no_referer1': _(
             "You are seeing this message because this HTTPS site requires a "
